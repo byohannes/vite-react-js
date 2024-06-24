@@ -1,6 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 function LogoLink({ href, src, alt }) {
@@ -12,27 +11,28 @@ function LogoLink({ href, src, alt }) {
 }
 
 function App() {
-  const [count, setCount] = useState(0)
-  const incrementCount = useCallback(() => setCount((count) => count + 1), [])
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+
+  const handleIncrement = () => {
+    setCount(count + 1);
+    countRef.current++;
+
+    console.log("State:", count);
+    console.log("Ref:", countRef.current);
+  };
 
   return (
     <main>
       <section>
-        <LogoLink href="https://vitejs.dev" src={viteLogo} alt="Vite logo" />
-        <LogoLink href="https://react.dev" src={reactLogo} alt="React logo" className="react" />
+        <LogoLink href="https://react.dev/reference/react/useRef" src={reactLogo} alt="React logo" className="react" />
       </section>
-      <h1>Yohannes + Laura</h1>
+      <h1>UseRef React hook</h1>
       <section className="card">
-        <button onClick={incrementCount}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+      Count is {count}
+      <br/>
+      <button onClick={handleIncrement}>Increment</button>
       </section>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </main>
   )
 }

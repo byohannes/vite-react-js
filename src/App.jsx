@@ -1,40 +1,26 @@
-import { useState, useCallback } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+/* eslint-disable react/jsx-no-comment-textnodes */
+// eslint-disable-next-line no-unused-vars
+import React from 'react'
 import './App.css'
 
-function LogoLink({ href, src, alt }) {
+// eslint-disable-next-line react/prop-types
+function Item({ name, isPacked }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer">
-      <img src={src} className="logo" alt={alt} />
-    </a>
-  )
+    <li className={isPacked ? 'packed' : 'not-packed'}>
+      {isPacked ? '🔲' : '🔳'} {name}
+    </li>
+  );
 }
 
-function App() {
-  const [count, setCount] = useState(0)
-  const incrementCount = useCallback(() => setCount((count) => count + 1), [])
-
+export default function App() {
   return (
-    <main>
-      <section>
-        <LogoLink href="https://vitejs.dev" src={viteLogo} alt="Vite logo" />
-        <LogoLink href="https://react.dev" src={reactLogo} alt="React logo" className="react" />
-      </section>
-      <h1>Yohannes + Laura</h1>
-      <section className="card">
-        <button onClick={incrementCount}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </section>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </main>
-  )
+    <section className='card'>
+      <h1>Sally Ride's Packing List</h1>
+      <ul>
+        <Item isPacked={true} name="Space suit" />
+        <Item isPacked={true} name="Helmet with a golden leaf" />
+        <Item isPacked={false} name="Photo of Tam" />
+      </ul>
+    </section>
+  );
 }
-
-export default App

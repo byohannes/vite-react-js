@@ -1,40 +1,35 @@
-import { useState, useCallback } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// eslint-disable-next-line no-unused-vars
+import React from 'react';
+import { useQuery } from 'react-query';
 
-function LogoLink({ href, src, alt }) {
+// Simulating a fetch function to get users from an API
+const fetchUsers = async () => {
+  const response = await fetch('https://jsonplaceholder.typicode.com/users');
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
+};
+
+function Users() {
+  // Using useQuery to fetch users
+  const { data: users, error, isLoading, isError } = useQuery('users', fetchUsers);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error: {error.message}</div>;
+
   return (
-    <a href={href} target="_blank" rel="noreferrer">
-      <img src={src} className="logo" alt={alt} />
-    </a>
-  )
+    <section className='card'>
+      <h1>Users</h1>
+      <ul>
+        {users.map(user => (
+          <li key={user.id}>{user.name}</li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
-function App() {
-  const [count, setCount] = useState(0)
-  const incrementCount = useCallback(() => setCount((count) => count + 1), [])
+export default Users;
 
-  return (
-    <main>
-      <section>
-        <LogoLink href="https://vitejs.dev" src={viteLogo} alt="Vite logo" />
-        <LogoLink href="https://react.dev" src={reactLogo} alt="React logo" className="react" />
-      </section>
-      <h1>Yohannes + Laura</h1>
-      <section className="card">
-        <button onClick={incrementCount}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </section>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </main>
-  )
-}
-
-export default App
+// TBD: Write unit tests for this component

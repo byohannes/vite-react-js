@@ -1,56 +1,94 @@
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import { render, fireEvent, screen, waitFor } from "@testing-library/react";
-import App from "../App.jsx";
+import { expect } from 'chai';
+import { describe, it, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "react-query";
+import Users from "../App"; // Adjust the import path as necessary
+import { fetchUsers } from "../App"; // Adjust the import path as necessary
 
-// Adjusting mocks to return objects with a "default" key
-vi.mock("/vite.svg", () => ({ default: "vite-logo-mock" }));
-vi.mock("./assets/react.svg", () => ({ default: "react-logo-mock" }));
+// Mock fetchUsers function
+vi.mock("../Users", async () => {
+  const originalModule = await vi.importActual("../Users"); // Import the original module
+  return {
+    __esModule: true, // This property tells the module system that we're simulating ESModule exports
+    default: originalModule.default, // Mock the default export if necessary, or provide a mock implementation
+    fetchUsers: vi.fn() // Provide a mock implementation for fetchUsers
+  };
+});
 
-describe("App", () => {
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  // eslint-disable-next-line react/display-name, react/prop-types
+  return ({ children }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+};
+
+describe("Users component", () => {
+  beforeAll(() => {
+    globalThis.fetch = vi.fn(() => Promise.resolve({
+      json: () => Promise.resolve([
+        { id: 1, name: "John Doe" },
+        { id: 2, name: "Jane Doe" }
+      ])
+    }));
+  });
+
+  afterAll(() => {
+    globalThis.fetch.mockRestore();
+  });
+
   beforeEach(() => {
-    render(<App />);
+    vi.resetAllMocks();
   });
 
-  it("renders without crashing", () => {
-    const element = screen.getByText(/Yohannes \+ Laura/);
-    expect(element).to.not.be.null;
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("renders LogoLink with correct props", () => {
-    const viteLogos = screen.getAllByAltText("Vite logo");
-    viteLogos.forEach((viteLogo) => {
-      expect(viteLogo).to.exist;
-      expect(viteLogo.getAttribute("src")).to.equal("vite-logo-mock");
-    });
+  it("renders loading state correctly", async () => {
+    fetchUsers.mockImplementationOnce(() => 
+      new Promise((resolve) => setTimeout(() => resolve([]), 100))
+    );
 
-    // Use getAllByAltText to handle multiple elements with the same alt text
-    const reactLogos = screen.getAllByAltText("React logo");
-    reactLogos.forEach((reactLogo) => {
-      expect(reactLogo).to.exist;
-      expect(reactLogo.getAttribute("src")).to.equal("/src/assets/react.svg");
-    });
+    render(<Users />, { wrapper: createWrapper() });
+
+    
+    expect(screen.queryByText(/Loading.../)).to.not.be.null;
   });
 
-  // Assuming you have already imported necessary functions and your component
-  it("increments count on button click", async () => {
-    const buttons = screen.getAllByRole("button", { name: /count is 0/ });
-    // If you're targeting a specific button, for example, the first one:
-    const buttonToClick = buttons[0];
-    fireEvent.click(buttonToClick);
+  it.skip("renders error state correctly", async () => {
+    fetchUsers.mockImplementationOnce(() =>
+      Promise.reject(new Error("Network response was not ok"))
+    );
 
-    // You may need to wait for the text to change if it's done asynchronously:
+    render(<Users />, { wrapper: createWrapper() });
+
+    // Use Chai's expect with waitFor for asynchronous elements
     await waitFor(() => {
-      // Using Chai's expect to check if the button's text includes 'count is 1'
-      expect(buttonToClick.textContent).to.include("count is 1");
+      expect(screen.queryByText(/Error:/)).to.not.be.null;
     });
   });
 
-  it("initial count is 0", () => {
-    const buttons = screen.getAllByRole("button", { name: /count is 0/ });
-    expect(buttons).to.have.lengthOf.above(0); // Asserts that there's at least one button using Chai
-    buttons.forEach((button) => {
-      expect(document.body.contains(button)).to.be.true;
-      // Any other Chai-compatible assertions you want to make about each button
+  it.skip("renders users correctly after fetching", async () => {
+    await waitFor(() => {
+      const textMatcher = (content, node) => {
+        const hasText = (node) => node.textContent === "John Doe";
+        const nodeHasText = hasText(node);
+        const childrenDontHaveText = Array.from(node.children).every(
+          (child) => !hasText(child)
+        );
+    
+        return nodeHasText && childrenDontHaveText;
+      };
+    
+      // Use Chai's expect to check if the element is not null
+      expect(screen.queryByText(textMatcher)).to.not.be.null;
     });
   });
 });

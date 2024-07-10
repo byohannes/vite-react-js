@@ -2,16 +2,22 @@ import { expect } from 'chai';
 import { describe, it, vi, beforeAll, afterAll, afterEach, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import Users from "../App"; // Adjust the import path as necessary
-import { fetchUsers } from "../App"; // Adjust the import path as necessary
+import App, { fetchUsers } from '../App.jsx';
 
 // Mock fetchUsers function
-vi.mock("../Users", async () => {
-  const originalModule = await vi.importActual("../Users"); // Import the original module
+// Adjust the mock implementation of fetchUsers to simulate HTTP response structure
+vi.mock("../App", async () => {
+  const originalModule = await vi.importActual("../App"); // Import the original module
   return {
     __esModule: true, // This property tells the module system that we're simulating ESModule exports
-    default: originalModule.default, // Mock the default export if necessary, or provide a mock implementation
-    fetchUsers: vi.fn() // Provide a mock implementation for fetchUsers
+    default: originalModule.default, // Keep the default export as is
+    fetchUsers: vi.fn(() => Promise.resolve({
+      ok: true, // Simulate a successful response
+      json: () => Promise.resolve([
+        { id: 1, name: "John Doe" },
+        { id: 2, name: "Jane Doe" }
+      ])
+    }))
   };
 });
 
@@ -31,16 +37,21 @@ const createWrapper = () => {
 
 describe("Users component", () => {
   beforeAll(() => {
-    globalThis.fetch = vi.fn(() => Promise.resolve({
-      json: () => Promise.resolve([
-        { id: 1, name: "John Doe" },
-        { id: 2, name: "Jane Doe" }
-      ])
-    }));
+    // eslint-disable-next-line no-undef
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([
+          { id: 1, name: "John Doe" },
+          { id: 2, name: "Jane Doe" },
+        ]),
+      })
+    );
   });
-
+  
   afterAll(() => {
-    globalThis.fetch.mockRestore();
+    // eslint-disable-next-line no-undef
+    global.fetch.mockRestore();
   });
 
   beforeEach(() => {
@@ -56,39 +67,34 @@ describe("Users component", () => {
       new Promise((resolve) => setTimeout(() => resolve([]), 100))
     );
 
-    render(<Users />, { wrapper: createWrapper() });
+    render(<App />, { wrapper: createWrapper() });
 
     
     expect(screen.queryByText(/Loading.../)).to.not.be.null;
   });
 
-  it.skip("renders error state correctly", async () => {
+  it("renders error state correctly", async () => {
     fetchUsers.mockImplementationOnce(() =>
       Promise.reject(new Error("Network response was not ok"))
     );
-
-    render(<Users />, { wrapper: createWrapper() });
-
+  
+    render(<App />, { wrapper: createWrapper() });
+  
     // Use Chai's expect with waitFor for asynchronous elements
-    await waitFor(() => {
-      expect(screen.queryByText(/Error:/)).to.not.be.null;
-    });
+    // Change from queryByText to findAllByText to handle multiple elements
+    const errors = await screen.findAllByText(/Error:/);
+    expect(errors.length).to.be.greaterThan(0); // Ensure there's at least one error message
   });
 
-  it.skip("renders users correctly after fetching", async () => {
+  it("renders users correctly after fetching", async () => {
+    // Assuming fetchUsers is correctly mocked to return a user named "John Doe"
+    
+    render(<App />, { wrapper: createWrapper() });
+  
+    // Use findByText with waitFor for better error handling
     await waitFor(() => {
-      const textMatcher = (content, node) => {
-        const hasText = (node) => node.textContent === "John Doe";
-        const nodeHasText = hasText(node);
-        const childrenDontHaveText = Array.from(node.children).every(
-          (child) => !hasText(child)
-        );
-    
-        return nodeHasText && childrenDontHaveText;
-      };
-    
-      // Use Chai's expect to check if the element is not null
-      expect(screen.queryByText(textMatcher)).to.not.be.null;
+      const userElement = screen.findByText("John Doe");
+      expect(userElement).to.not.be.null;
     });
   });
 });

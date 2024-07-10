@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { describe, beforeEach, afterEach, it, vi, expect } from 'vitest';
 import App from '../App.jsx';
+import { QueryClientProvider } from 'react-query';
 
 // Directly mock ReactDOM.createRoot
 const mockRender = vi.fn();
@@ -50,7 +51,9 @@ describe('main.jsx', () => {
     const renderMock = ReactDOM.createRoot.mock.results[0].value.render;
     expect(renderMock).toHaveBeenCalledWith(
       <React.StrictMode>
-        <App />
+        <QueryClientProvider client={expect.anything()}>
+          <App />
+        </QueryClientProvider>
       </React.StrictMode>
     );
   });

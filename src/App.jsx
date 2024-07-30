@@ -1,40 +1,35 @@
-import { useState, useRef } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import { useQuery } from '@tanstack/react-query';
 
-function LogoLink({ href, src, alt }) {
-  return (
-    <a href={href} target="_blank" rel="noreferrer">
-      <img src={src} className="logo" alt={alt} />
-    </a>
-  )
-}
+// Simulating a fetch function to get users from an API
+// eslint-disable-next-line react-refresh/only-export-components
+export const fetchUsers = async () => {
+  const response = await fetch('https://jsonplaceholder.typicode.com/users');
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
+};
 
-function App() {
-  const [count, setCount] = useState(0);
-  const countRef = useRef(0);
+function Users() {
+  // Using useQuery to fetch users with the object form
+  const { data: users, error, isLoading, isError } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+  });
 
-  const handleIncrement = () => {
-    setCount(count + 1);
-    countRef.current++;
-
-    console.log("State:", count);
-    console.log("Ref:", countRef.current);
-  };
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error: {error.message}</div>;
 
   return (
-    <main>
-      <section>
-        <LogoLink href="https://react.dev/reference/react/useRef" src={reactLogo} alt="React logo" className="react" />
-      </section>
-      <h1>UseRef React hook</h1>
-      <section className="card">
-      Count is {count}
-      <br/>
-      <button onClick={handleIncrement}>Increment</button>
-      </section>
-    </main>
-  )
+    <section className='card'>
+      <h1>Users</h1>
+      <ul>
+        {users.map(user => (
+          <li key={user.id}>{user.name}</li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
-export default App
+export default Users;
